@@ -11,6 +11,7 @@ import { PaymentRemindersModule } from './modules/payment-reminders/payment-remi
 import { BudgetsModule } from './modules/budgets/budgets.module';
 import { SavingGoalsModule } from './modules/saving-goals/saving-goals.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     BudgetsModule,
     SavingGoalsModule,
     ReportsModule,
+    TelegramModule,
   ],
   controllers: [AppController],
   providers: [AppService],
