@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  telegramId String   @unique
+  name      String
+  currency  String   @default("RD$")
+  timezone  String   @default("America/Santo_Domingo")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions    Transaction[]
+  categories      Category[]
+  budgets         Budget[]
+  savingGoals     SavingGoal[]
+  paymentReminders PaymentReminder[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String
+  icon  String
+  color String
+  type  String // "Income" | "Expense"
+  userId String?
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@unique([name, userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // "Income" | "Expense"
+  amount          Float
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  description     String
+  transactionDate DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([transactionDate])
+  @@index([type])
+  @@map("transactions")
+}
+
+model Budget {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId   String
+  monthlyLimit Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+  @@map("budgets")
+}
+
+model SavingGoal {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  targetAmount  Float
+  currentAmount Float   @default(0)
+  targetDate    DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("saving_goals")
+}
+
+model PaymentReminder {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceName      String
+  amount           Float
+  paymentDay       Int      // 1-31
+  frequency        String   // "monthly" | "weekly" | "daily"
+  active           Boolean  @default(true)
+  lastCompletedAt  DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@map("payment_reminders")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "BUDGET_WARNING" | "REMINDER" | "REPORT" | "INFO"
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  data      String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
