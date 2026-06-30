@@ -10,6 +10,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { PaymentRemindersModule } from './modules/payment-reminders/payment-reminders.module';
 import { BudgetsModule } from './modules/budgets/budgets.module';
 import { SavingGoalsModule } from './modules/saving-goals/saving-goals.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SavingGoalsModule } from './modules/saving-goals/saving-goals.module';
     PaymentRemindersModule,
     BudgetsModule,
     SavingGoalsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
