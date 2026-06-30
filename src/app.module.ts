@@ -8,6 +8,8 @@ import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { PaymentRemindersModule } from './modules/payment-reminders/payment-reminders.module';
+import { BudgetsModule } from './modules/budgets/budgets.module';
+import { SavingGoalsModule } from './modules/saving-goals/saving-goals.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { PaymentRemindersModule } from './modules/payment-reminders/payment-remi
     TransactionsModule,
     CategoriesModule,
     PaymentRemindersModule,
+    BudgetsModule,
+    SavingGoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
