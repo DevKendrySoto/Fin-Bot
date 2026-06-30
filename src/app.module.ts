@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { PaymentRemindersModule } from './modules/payment-reminders/payment-reminders.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     UsersModule,
     TransactionsModule,
     CategoriesModule,
+    PaymentRemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
