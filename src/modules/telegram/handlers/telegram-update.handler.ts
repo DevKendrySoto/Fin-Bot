@@ -1,14 +1,14 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { TelegramService } from '../services/telegram.service';
 import { PrismaService } from 'src/database/prisma.service';
 import { TransactionsService } from 'src/modules/transactions/services/transactions.service';
 import { ReportsService } from 'src/modules/reports/services/reports.service';
 import { Context } from 'telegraf';
+import { message } from 'telegraf/filters';
 import { TransactionType } from 'src/modules/transactions/dto/create-transaction.dto';
 
 @Injectable()
 export class TelegramUpdateHandler implements OnModuleInit {
-  private readonly logger = new Logger(TelegramUpdateHandler.name);
 
   constructor(
     private readonly telegramService: TelegramService,
@@ -22,15 +22,15 @@ export class TelegramUpdateHandler implements OnModuleInit {
 
     bot.start((ctx) => this.handleStart(ctx));
     bot.command('balance', (ctx) => this.handleBalance(ctx));
-    bot.command('expenses', (ctx) => this.handleExpenses(ctx));
-    bot.command('income', (ctx) => this.handleIncome(ctx));
-    bot.command('summary', (ctx) => this.handleSummary(ctx));
-    bot.command('history', (ctx) => this.handleHistory(ctx));
-    bot.command('help', (ctx) => this.handleHelp(ctx));
-    bot.on('text', (ctx) => this.handleText(ctx));
+    bot.command('gastos', (ctx) => this.handleGastos(ctx));
+    bot.command('ingresos', (ctx) => this.handleIngresos(ctx));
+    bot.command('resumen', (ctx) => this.handleResumen(ctx));
+    bot.command('historial', (ctx) => this.handleHistorial(ctx));
+    bot.command('ayuda', (ctx) => this.handleAyuda(ctx));
+    bot.on(message('text'), (ctx) => this.handleText(ctx));
   }
 
-  // ─── Command Handlers ───────────────────────────────────────────
+  // ─── Comandos ───────────────────────────────────────────────────
 
   private async handleStart(ctx: Context) {
     const telegramId = String(ctx.from!.id);
@@ -48,14 +48,14 @@ export class TelegramUpdateHandler implements OnModuleInit {
         },
       });
       await ctx.reply(
-        `👋 Welcome to <b>FinBot</b>, ${name}!\n\n` +
-        `Your account has been created. Here's what you can do:\n\n` +
+        `👋 ¡Bienvenido a <b>FinBot</b>, ${name}!\n\n` +
+        `Tu cuenta ha sido creada exitosamente. Aquí te explico qué puedes hacer:\n\n` +
         this.getCommandList(),
         { parse_mode: 'HTML' },
       );
     } else {
       await ctx.reply(
-        `👋 Welcome back, <b>${user.name}</b>!\n\n${this.getCommandList()}`,
+        `👋 ¡Bienvenido de nuevo, <b>${user.name}</b>!\n\n${this.getCommandList()}`,
         { parse_mode: 'HTML' },
       );
     }
@@ -68,16 +68,16 @@ export class TelegramUpdateHandler implements OnModuleInit {
     const balance = await this.transactionsService.getBalance(user.id);
 
     await ctx.reply(
-      `💰 <b>Your Balance</b>\n\n` +
-      `📈 Income:  <b>${balance.currency} ${balance.totalIncome.toFixed(2)}</b>\n` +
-      `📉 Expenses: <b>${balance.currency} ${balance.totalExpenses.toFixed(2)}</b>\n` +
+      `💰 <b>Tu Balance Actual</b>\n\n` +
+      `📈 Ingresos:  <b>${balance.currency} ${balance.totalIncome.toFixed(2)}</b>\n` +
+      `📉 Gastos:    <b>${balance.currency} ${balance.totalExpenses.toFixed(2)}</b>\n` +
       `━━━━━━━━━━━━━━\n` +
-      `🏦 Balance: <b>${balance.currency} ${balance.currentBalance.toFixed(2)}</b>`,
+      `🏦 Balance:  <b>${balance.currency} ${balance.currentBalance.toFixed(2)}</b>`,
       { parse_mode: 'HTML' },
     );
   }
 
-  private async handleExpenses(ctx: Context) {
+  private async handleGastos(ctx: Context) {
     const user = await this.getUser(ctx);
     if (!user) return;
 
@@ -88,22 +88,22 @@ export class TelegramUpdateHandler implements OnModuleInit {
     });
 
     if (!data.length) {
-      await ctx.reply('No expenses recorded yet.');
+      await ctx.reply('Aún no tienes gastos registrados.');
       return;
     }
 
     const lines = data.map(
       (t: any) =>
-        `• ${t.category.icon} <b>${t.description}</b> — ${t.amount.toFixed(2)}\n  <i>${new Date(t.transactionDate).toLocaleDateString()}</i>`,
+        `• ${t.category.icon} <b>${t.description}</b> — ${t.amount.toFixed(2)}\n  <i>${new Date(t.transactionDate).toLocaleDateString('es-DO')}</i>`,
     );
 
     await ctx.reply(
-      `📉 <b>Recent Expenses</b>\n\n${lines.join('\n\n')}`,
+      `📉 <b>Últimos Gastos</b>\n\n${lines.join('\n\n')}`,
       { parse_mode: 'HTML' },
     );
   }
 
-  private async handleIncome(ctx: Context) {
+  private async handleIngresos(ctx: Context) {
     const user = await this.getUser(ctx);
     if (!user) return;
 
@@ -114,22 +114,22 @@ export class TelegramUpdateHandler implements OnModuleInit {
     });
 
     if (!data.length) {
-      await ctx.reply('No income recorded yet.');
+      await ctx.reply('Aún no tienes ingresos registrados.');
       return;
     }
 
     const lines = data.map(
       (t: any) =>
-        `• 💵 <b>${t.description}</b> — ${t.amount.toFixed(2)}\n  <i>${new Date(t.transactionDate).toLocaleDateString()}</i>`,
+        `• 💵 <b>${t.description}</b> — ${t.amount.toFixed(2)}\n  <i>${new Date(t.transactionDate).toLocaleDateString('es-DO')}</i>`,
     );
 
     await ctx.reply(
-      `📈 <b>Recent Income</b>\n\n${lines.join('\n\n')}`,
+      `📈 <b>Últimos Ingresos</b>\n\n${lines.join('\n\n')}`,
       { parse_mode: 'HTML' },
     );
   }
 
-  private async handleSummary(ctx: Context) {
+  private async handleResumen(ctx: Context) {
     const user = await this.getUser(ctx);
     if (!user) return;
 
@@ -140,27 +140,27 @@ export class TelegramUpdateHandler implements OnModuleInit {
       now.getFullYear(),
     );
 
-    const topCategories = report.byCategory
+    const topCategorias = report.byCategory
       .slice(0, 3)
       .map((c: any) => `  ${c.icon ?? '📦'} ${c.name}: ${c.amount.toFixed(2)} (${c.percentage}%)`)
       .join('\n');
 
-    const recommendations = report.recommendations.length
-      ? '\n\n💡 <b>Tips</b>\n' + report.recommendations.map((r: string) => `• ${r}`).join('\n')
+    const recomendaciones = report.recommendations.length
+      ? '\n\n💡 <b>Consejos</b>\n' + report.recommendations.map((r: string) => `• ${r}`).join('\n')
       : '';
 
     await ctx.reply(
-      `📊 <b>Monthly Summary — ${report.period.label}</b>\n\n` +
-      `📈 Income:   <b>${report.currency} ${report.totalIncome.toFixed(2)}</b>\n` +
-      `📉 Expenses: <b>${report.currency} ${report.totalExpenses.toFixed(2)}</b>\n` +
-      `💰 Saved:    <b>${report.currency} ${report.netIncome.toFixed(2)}</b>\n\n` +
-      `<b>Top Categories:</b>\n${topCategories || '  No expenses yet'}` +
-      recommendations,
+      `📊 <b>Resumen Mensual — ${report.period.label}</b>\n\n` +
+      `📈 Ingresos:  <b>${report.currency} ${report.totalIncome.toFixed(2)}</b>\n` +
+      `📉 Gastos:    <b>${report.currency} ${report.totalExpenses.toFixed(2)}</b>\n` +
+      `💰 Ahorrado: <b>${report.currency} ${report.netIncome.toFixed(2)}</b>\n\n` +
+      `<b>Principales Categorías:</b>\n${topCategorias || '  Sin gastos aún'}` +
+      recomendaciones,
       { parse_mode: 'HTML' },
     );
   }
 
-  private async handleHistory(ctx: Context) {
+  private async handleHistorial(ctx: Context) {
     const user = await this.getUser(ctx);
     if (!user) return;
 
@@ -170,114 +170,124 @@ export class TelegramUpdateHandler implements OnModuleInit {
     });
 
     if (!data.length) {
-      await ctx.reply('No transactions recorded yet.');
+      await ctx.reply('Aún no tienes transacciones registradas.');
       return;
     }
 
     const lines = data.map((t: any) => {
       const emoji = t.type === 'Income' ? '📈' : '📉';
-      return `${emoji} <b>${t.description}</b>\n  ${t.amount.toFixed(2)} • ${t.category.icon} ${t.category.name} • <i>${new Date(t.transactionDate).toLocaleDateString()}</i>`;
+      return `${emoji} <b>${t.description}</b>\n  ${t.amount.toFixed(2)} • ${t.category.icon} ${t.category.name} • <i>${new Date(t.transactionDate).toLocaleDateString('es-DO')}</i>`;
     });
 
     await ctx.reply(
-      `📋 <b>Last 10 Transactions</b>\n\n${lines.join('\n\n')}`,
+      `📋 <b>Últimas 10 Transacciones</b>\n\n${lines.join('\n\n')}`,
       { parse_mode: 'HTML' },
     );
   }
 
-  private async handleHelp(ctx: Context) {
+  private async handleAyuda(ctx: Context) {
     await ctx.reply(this.getCommandList(), { parse_mode: 'HTML' });
   }
 
-  // ─── Natural Language Handler ────────────────────────────────────
+  // ─── Lenguaje Natural ────────────────────────────────────────────
 
   private async handleText(ctx: Context) {
     if (!('text' in ctx.message!)) return;
     const text = (ctx.message as any).text as string;
 
-    const expenseMatch = this.parseExpense(text);
-    const incomeMatch = this.parseIncome(text);
+    const gastoMatch = this.parseGasto(text);
+    const ingresoMatch = this.parseIngreso(text);
 
-    if (expenseMatch) {
-      await this.registerTransaction(ctx, expenseMatch.amount, expenseMatch.description, 'Expense');
-    } else if (incomeMatch) {
-      await this.registerTransaction(ctx, incomeMatch.amount, incomeMatch.description, 'Income');
+    if (gastoMatch) {
+      await this.registrarTransaccion(ctx, gastoMatch.monto, gastoMatch.descripcion, 'Expense');
+    } else if (ingresoMatch) {
+      await this.registrarTransaccion(ctx, ingresoMatch.monto, ingresoMatch.descripcion, 'Income');
     } else {
       await ctx.reply(
-        `I didn't understand that. Try:\n` +
-        `• "I spent 850 on groceries"\n` +
-        `• "Paid 1200 for transport"\n` +
-        `• "I received 45000 salary"\n\n` +
-        `Or use /help to see all commands.`,
+        `No entendí ese mensaje. Intenta así:\n\n` +
+        `📉 <b>Para gastos:</b>\n` +
+        `• "Gasté 850 en supermercado"\n` +
+        `• "Pagué 1200 de transporte"\n` +
+        `• "Internet 1800"\n\n` +
+        `📈 <b>Para ingresos:</b>\n` +
+        `• "Recibí mi sueldo de 45000"\n` +
+        `• "Cobré freelance 15000"\n\n` +
+        `Usa /ayuda para ver todos los comandos.`,
+        { parse_mode: 'HTML' },
       );
     }
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────
+  // ─── Parsers de lenguaje natural ─────────────────────────────────
 
-  private parseExpense(text: string) {
-    const patterns = [
-      /(?:spent|paid|pay|bought|spend)\s+(\d+(?:[.,]\d+)?)\s+(?:on\s+|for\s+)?(.+)/i,
-      /(.+?)\s+(?:bill|cost|fee)\s+(\d+(?:[.,]\d+)?)/i,
+  private parseGasto(text: string) {
+    const patrones = [
+      // Español: "Gasté 850 en supermercado", "Pagué 1200 de transporte"
+      /(?:gasté|gaste|pagué|pague|compré|compre|gasté|invertí|invertí)\s+(\d+(?:[.,]\d+)?)\s+(?:en\s+|de\s+|por\s+)?(.+)/i,
+      // Sin verbo: "Supermercado 850", "Internet 1800"
+      /^([A-Za-záéíóúÁÉÍÓÚñÑ][A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)\s+(\d+(?:[.,]\d+)?)$/i,
     ];
 
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
+    for (const patron of patrones) {
+      const match = text.match(patron);
       if (match) {
-        const amount = parseFloat(match[1].replace(',', '.'));
-        const description = match[2]?.trim() ?? match[1]?.trim();
-        if (!isNaN(amount)) return { amount, description };
+        // El primer patrón tiene monto en [1], el segundo en [2]
+        const montoStr = patron === patrones[0] ? match[1] : match[2];
+        const descripcion = patron === patrones[0] ? match[2]?.trim() : match[1]?.trim();
+        const monto = parseFloat(montoStr.replace(',', '.'));
+        if (!isNaN(monto) && descripcion) return { monto, descripcion };
       }
     }
     return null;
   }
 
-  private parseIncome(text: string) {
-    const pattern = /(?:received|got|earned|income|salary|freelance)\s+(?:of\s+)?(\d+(?:[.,]\d+)?)\s*(.+)?/i;
-    const match = text.match(pattern);
+  private parseIngreso(text: string) {
+    const patron = /(?:recibí|recibi|cobré|cobre|gané|gane|ingresé|ingrese|sueldo|salario|pago|freelance)\s+(?:de\s+|mi\s+|el\s+)?(\d+(?:[.,]\d+)?)\s*(.+)?/i;
+    const match = text.match(patron);
     if (match) {
-      const amount = parseFloat(match[1].replace(',', '.'));
-      const description = match[2]?.trim() ?? 'Income';
-      if (!isNaN(amount)) return { amount, description };
+      const monto = parseFloat(match[1].replace(',', '.'));
+      const descripcion = match[2]?.trim() || text.split(/\d/)[0].trim() || 'Ingreso';
+      if (!isNaN(monto)) return { monto, descripcion };
     }
     return null;
   }
 
-  private async registerTransaction(
+  private async registrarTransaccion(
     ctx: Context,
-    amount: number,
-    description: string,
-    type: 'Income' | 'Expense',
+    monto: number,
+    descripcion: string,
+    tipo: 'Income' | 'Expense',
   ) {
     const user = await this.getUser(ctx);
     if (!user) return;
 
-    // Find a default category
-    const categoryName = type === 'Income' ? 'Other Income' : 'Other Expense';
-    const category = await this.prisma.category.findFirst({
-      where: { name: categoryName, userId: null },
+    const nombreCategoria = tipo === 'Income' ? 'Other Income' : 'Other Expense';
+    const categoria = await this.prisma.category.findFirst({
+      where: { name: nombreCategoria, userId: null },
     });
 
-    if (!category) {
-      await ctx.reply('❌ No default categories found. Please run the seed first.');
+    if (!categoria) {
+      await ctx.reply('❌ No se encontraron categorías. Ejecuta el seed primero.');
       return;
     }
 
     await this.transactionsService.create(user.id, {
-      type: type as TransactionType,
-      amount,
-      categoryId: category.id,
-      description,
+      type: tipo as TransactionType,
+      amount: monto,
+      categoryId: categoria.id,
+      description: descripcion,
       transactionDate: new Date().toISOString(),
     });
 
-    const emoji = type === 'Income' ? '📈' : '📉';
+    const emoji = tipo === 'Income' ? '📈' : '📉';
+    const label = tipo === 'Income' ? '¡Ingreso registrado!' : '¡Gasto registrado!';
+
     await ctx.reply(
-      `${emoji} <b>${type} registered!</b>\n\n` +
-      `📝 ${description}\n` +
-      `💵 ${user.currency} ${amount.toFixed(2)}\n` +
-      `📅 ${new Date().toLocaleDateString()}\n\n` +
-      `Use /balance to see your current balance.`,
+      `${emoji} <b>${label}</b>\n\n` +
+      `📝 ${descripcion}\n` +
+      `💵 ${user.currency} ${monto.toFixed(2)}\n` +
+      `📅 ${new Date().toLocaleDateString('es-DO')}\n\n` +
+      `Usa /balance para ver tu balance actual.`,
       { parse_mode: 'HTML' },
     );
   }
@@ -287,7 +297,7 @@ export class TelegramUpdateHandler implements OnModuleInit {
     const user = await this.prisma.user.findUnique({ where: { telegramId } });
 
     if (!user) {
-      await ctx.reply('Please send /start to register first.');
+      await ctx.reply('Envía /start para registrarte primero.');
       return null;
     }
     return user;
@@ -295,17 +305,19 @@ export class TelegramUpdateHandler implements OnModuleInit {
 
   private getCommandList(): string {
     return (
-      `<b>Available Commands:</b>\n\n` +
-      `/balance — View current balance\n` +
-      `/expenses — Recent expenses\n` +
-      `/income — Recent income\n` +
-      `/history — Last 10 transactions\n` +
-      `/summary — Monthly summary\n` +
-      `/help — Show this menu\n\n` +
-      `<b>Natural Language:</b>\n` +
-      `• "I spent 850 on groceries"\n` +
-      `• "Paid 1200 for transport"\n` +
-      `• "I received 45000 salary"`
+      `<b>📋 Comandos disponibles:</b>\n\n` +
+      `/balance — Ver tu balance actual\n` +
+      `/gastos — Últimos gastos\n` +
+      `/ingresos — Últimos ingresos\n` +
+      `/historial — Últimas 10 transacciones\n` +
+      `/resumen — Resumen mensual\n` +
+      `/ayuda — Ver este menú\n\n` +
+      `<b>💬 También puedes escribir naturalmente:</b>\n` +
+      `📉 "Gasté 850 en supermercado"\n` +
+      `📉 "Pagué 1200 de transporte"\n` +
+      `📉 "Internet 1800"\n` +
+      `📈 "Recibí mi sueldo de 45000"\n` +
+      `📈 "Cobré freelance 15000"`
     );
   }
 }
